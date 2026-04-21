@@ -1,72 +1,164 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تطبيق الثقلين - الإصدار المطور</title>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { --gold: #d4af37; --bg: #000804; --glass: rgba(255, 255, 255, 0.05); --active-bg: rgba(212, 175, 55, 0.15); }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); background-image: radial-gradient(circle at center, #051a0f 0%, #000 100%); color: #e0e0e0; font-family: 'Tajawal', sans-serif; min-height: 100vh; overflow-x: hidden; }
-        
-        .overlay { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(15px); }
-        .choice-card { width: 90%; max-width: 400px; padding: 25px; border-radius: 20px; margin: 10px; border: 1px solid var(--gold); background: var(--glass); cursor: pointer; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .choice-card:active { transform: scale(0.95); background: var(--active-bg); }
-        
-        /* تعديل صندوق التحذير ليكون كبيراً وبألوان هادئة */
-        .warn-box { border: 2px solid var(--gold); border-radius: 30px; padding: 40px 30px; text-align: center; background: rgba(10, 20, 15, 0.95); max-width: 550px; width: 95%; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); }
-        .warn-contact { margin: 20px 0; padding: 20px; background: rgba(212, 175, 55, 0.07); border-radius: 20px; font-size: 1.1rem; border: 1px dashed var(--gold); line-height: 2; }
-        .warn-contact b { color: var(--gold); font-size: 1.3rem; margin: 0 5px; }
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Home, 
+  BookOpen, 
+  Activity, 
+  TrendingUp, 
+  Settings, 
+  CheckCircle2, 
+  AlertCircle
+} from 'lucide-react';
 
-        header { padding: 15px; text-align: center; background: rgba(0,0,0,0.8); border-bottom: 1px solid var(--gold); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-        .logo { font-family: 'Amiri', serif; font-size: 1.8rem; color: var(--gold); text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+// --- البيانات والمحتوى ---
+type Madhhab = 'shia' | 'sunni' | null;
+type Page = 'home' | 'adhkar' | 'activities' | 'roadmap';
 
-        .page { display: none; padding: 20px; max-width: 700px; margin: auto; padding-bottom: 140px; }
-        .page.active { display: block; animation: fadeIn 0.6s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+interface ContentData {
+  morning: string;
+  evening: string;
+  dua: string;
+  hadith: string;
+}
 
-        .card { background: var(--glass); border-radius: 20px; padding: 20px; margin-bottom: 15px; border-right: 4px solid var(--gold); transition: 0.3s; }
-        .card h3 { color: var(--gold); margin-bottom: 12px; font-family: 'Amiri'; font-size: 1.4rem; border-bottom: 1px solid rgba(212,175,55,0.1); padding-bottom: 5px; }
-        .card p { font-family: 'Amiri', serif; font-size: 1.3rem; line-height: 1.8; text-align: justify; color: #d0d0d0; }
+const contentByMadhhab: Record<'shia' | 'sunni', ContentData> = {
+  sunni: {
+    morning: 'أصبحنا وأصبح الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير.',
+    evening: 'أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير.',
+    dua: 'اللهم أعنّي على ذكرك وشكرك وحسن عبادتك.',
+    hadith: 'قال رسول الله ﷺ: أحب الأعمال إلى الله أدومها وإن قل.'
+  },
+  shia: {
+    morning: 'اللهم إني أصبحت أشهدك وأشهد حملة عرشك وملائكتك وجميع خلقك أنك أنت الله لا إله إلا أنت.',
+    evening: 'اللهم إني أمسيت في ذمتك وجوارك وأمانك، فألبسني عافيتك وسترك ورحمتك.',
+    dua: 'اللهم صلّ على محمد وآل محمد، وافتح لي أبواب رحمتك، ويسّر لي أبواب رزقك.',
+    hadith: 'قال الإمام علي عليه السلام: ذكرُ اللهِ دِعامةُ الإيمانِ وعِصمةٌ من الشيطان.'
+  }
+};
 
-        .prayer-list { background: var(--glass); border-radius: 20px; overflow: hidden; }
-        .prayer-time-box { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid rgba(212,175,55,0.1); transition: 0.3s; }
-        .prayer-time-box:last-child { border: none; }
-        .prayer-time-box span:first-child { color: var(--gold); font-weight: bold; }
+const prayers = [
+  { name: 'الفجر', time: '04:12' },
+  { name: 'الشروق', time: '05:39' },
+  { name: 'الظهر', time: '11:49' },
+  { name: 'العصر', time: '15:22' },
+  { name: 'المغرب', time: '17:58' },
+  { name: 'العشاء', time: '19:18' }
+];
 
-        .subha-container { text-align: center; margin-top: 20px; }
-        .press-zone { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--gold); margin: 25px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%); cursor: pointer; transition: 0.2s; box-shadow: 0 0 30px rgba(212,175,55,0.1); position: relative; overflow: hidden; }
-        .press-zone:active { transform: scale(0.92); background: var(--active-bg); }
-        
-        .reset-btn { width: 100%; max-width: 300px; padding: 18px; border-radius: 15px; border: 1px solid #ff4444; background: rgba(255,68,68,0.05); color: #ff4444; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
-        .reset-btn:active { background: #ff4444; color: white; }
+export default function App() {
+  const [madhhab, setMadhhab] = useState<Madhhab>(null);
+  const [page, setPage] = useState<Page>('home');
+  const [fatiha, setFatiha] = useState<number>(0);
+  const [tasbeeh, setTasbeeh] = useState<number>(0);
+  const [tasbeehLabel, setTasbeehLabel] = useState<string>('سبحان الله');
+  const [adhkarType, setAdhkarType] = useState<keyof ContentData>('morning');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-        nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; background: rgba(0, 12, 6, 0.95); border: 1px solid var(--gold); border-radius: 35px; display: flex; padding: 12px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .nav-link { flex: 1; text-align: center; color: #666; cursor: pointer; transition: 0.3s; font-size: 0.85rem; }
-        .nav-link.active { color: var(--gold); transform: translateY(-3px); }
-        .nav-link i { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+  useEffect(() => {
+    const savedMadhhab = localStorage.getItem('thaqalayn_madhhab') as Madhhab;
+    const savedFatiha = localStorage.getItem('thaqalayn_fatiha');
+    const savedTasbeeh = localStorage.getItem('thaqalayn_tasbeeh');
+    const savedTasbeehLabel = localStorage.getItem('thaqalayn_tasbeeh_label');
 
-        select { width: 100%; padding: 15px; background: #0a0a0a; color: var(--gold); border: 1px solid var(--gold); border-radius: 15px; font-family: 'Tajawal'; font-size: 1rem; outline: none; margin-bottom: 20px; }
-    </style>
-</head>
-<body>
+    if (savedMadhhab) setMadhhab(savedMadhhab);
+    else setShowOnboarding(true);
 
-<div id="gate" class="overlay">
-    <div class="logo" style="font-size: 3rem; margin-bottom: 40px;">الثقلين</div>
-    <div class="choice-card" onclick="chooseMethod('shia')">
-        <h2 style="color: var(--gold);">المذهب الشيعي</h2>
+    if (savedFatiha) setFatiha(parseInt(savedFatiha));
+    if (savedTasbeeh) setTasbeeh(parseInt(savedTasbeeh));
+    if (savedTasbeehLabel) setTasbeehLabel(savedTasbeehLabel);
+  }, []);
+
+  const handleSetMadhhab = (type: 'shia' | 'sunni') => {
+    setMadhhab(type);
+    localStorage.setItem('thaqalayn_madhhab', type);
+    setShowOnboarding(false);
+  };
+
+  const handleIncrementFatiha = () => {
+    const newVal = fatiha + 1;
+    setFatiha(newVal);
+    localStorage.setItem('thaqalayn_fatiha', newVal.toString());
+    if (window.navigator.vibrate) window.navigator.vibrate(12);
+  };
+
+  const handleIncrementTasbeeh = () => {
+    const newVal = tasbeeh + 1;
+    setTasbeeh(newVal);
+    localStorage.setItem('thaqalayn_tasbeeh', newVal.toString());
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+  };
+
+  return (
+    <div className="relative pb-24 max-w-[880px] mx-auto min-h-screen">
+      {/* الخلفية والإضاءة */}
+      <div className="glow -top-64 -right-64 w-[600px] h-[600px] opacity-40" />
+      <div className="glow -bottom-64 -left-64 w-[600px] h-[600px] opacity-40" />
+
+      {/* نافذة اختيار المذهب */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="glass max-w-xl w-full p-10 flex flex-col items-center border-brand-gold/30"
+            >
+              <h2 className="quranic-font text-5xl gold-gradient mb-4">الثقلين</h2>
+              <p className="text-brand-muted text-center mb-10 opacity-80 uppercase tracking-widest">يرجى اختيار المذهب</p>
+              
+              <div className="w-full flex flex-col gap-4">
+                <button onClick={() => handleSetMadhhab('shia')} className="sect-card p-8 rounded-[32px] text-3xl font-bold text-[#fff4c5]">المذهب الشيعي</button>
+                <button onClick={() => handleSetMadhhab('sunni')} className="sect-card p-8 rounded-[32px] text-3xl font-bold text-[#fff4c5]">المذهب السني</button>
+              </div>
+
+              <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md w-full">
+                <p className="quranic-font text-center text-[#f3f0e3]">
+                  بلاغ عن خطأ: التيك توك <span className="text-brand-gold">althaqalayn_</span> أو انستقرام <span className="text-brand-gold">irq_of</span>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* رأس الصفحة */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-brand-line bg-brand-bg/80">
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center shadow-lg"><span className="text-brand-bg text-2xl font-bold">☪</span></div>
+            <h1 className="quranic-font text-3xl gold-gradient">الثقلين</h1>
+          </div>
+          <div className="px-4 py-2 rounded-full border border-brand-line bg-brand-gold/10 text-brand-gold text-xs font-bold uppercase tracking-widest">
+            {madhhab === 'shia' ? 'شيعي' : madhhab === 'sunni' ? 'سني' : 'لم يحدد'}
+          </div>
+        </div>
+      </header>
+
+      {/* الأقسام: الرئيسية، الأذكار، الفعاليات... */}
+      <main className="p-6 space-y-8">
+        {page === 'home' && (
+           <div className="glass p-10 relative overflow-hidden group">
+             <h2 className="quranic-font text-5xl gold-gradient mb-4">رفيقك اليومي للسكينة</h2>
+             <p className="text-brand-muted leading-relaxed mb-10 opacity-90">مواقيت صلاة، أذكار، وسبحة ذكية بتصميم مريح.</p>
+             <div className="grid grid-cols-3 gap-4">
+               <div className="stat-box"><b>128</b><span>ذكر</span></div>
+               <div className="stat-box"><b>{fatiha}</b><span>فاتحة</span></div>
+               <div className="stat-box"><b>{tasbeeh}</b><span>تسبيح</span></div>
+             </div>
+           </div>
+        )}
+        {/* ... بقية الأقسام ... */}
+      </main>
+
+      {/* التنقل السفلي */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass p-3 flex justify-around border-brand-line shadow-2xl z-50">
+        <button onClick={() => setPage('home')} className={`nav-btn ${page === 'home' ? 'active' : ''}`}><Home /><span>الرئيسية</span></button>
+        <button onClick={() => setPage('adhkar')} className={`nav-btn ${page === 'adhkar' ? 'active' : ''}`}><BookOpen /><span>الأذكار</span></button>
+        <button onClick={() => setPage('activities')} className={`nav-btn ${page === 'activities' ? 'active' : ''}`}><Activity /><span>الفعاليات</span></button>
+        <button onClick={() => setShowOnboarding(true)} className="nav-btn text-brand-muted"><Settings /><span>المذهب</span></button>
+      </nav>
     </div>
-    <div class="choice-card" onclick="chooseMethod('sunni')">
-        <h2 style="color: var(--gold);">المذهب السني</h2>
-    </div>
-</div>
-
-<div id="warn" class="overlay" style="display:none;">
-    <div class="warn-box">
-        <h2 style="color:var(--gold); margin-bottom:20px; font-family:'Amiri'; font-size:2.5rem;">تنبيه هادئ</h2>
-        <p style="font-size: 1.2rem; line-height: 1.6;">يرجى تفعيل الموقع (GPS) لضبط أوقات الصلاة بدقة.</p>
-        
-        <div class="warn-contact">
-            <p style="color: #fff; margin-bottom
+  );
+}

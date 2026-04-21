@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق الثقلين - الإصدار المطور</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --gold: #d4af37; --bg: #000804; --glass: rgba(255, 255, 255, 0.05); --active-bg: rgba(212, 175, 55, 0.15); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); background-image: radial-gradient(circle at center, #051a0f 0%, #000 100%); color: #e0e0e0; font-family: 'Tajawal', sans-serif; min-height: 100vh; overflow-x: hidden; }
+        
+        .overlay { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(15px); }
+        .choice-card { width: 90%; max-width: 400px; padding: 25px; border-radius: 20px; margin: 10px; border: 1px solid var(--gold); background: var(--glass); cursor: pointer; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .choice-card:active { transform: scale(0.95); background: var(--active-bg); }
+        
+        /* تعديل صندوق التحذير ليكون كبيراً وبألوان هادئة */
+        .warn-box { border: 2px solid var(--gold); border-radius: 30px; padding: 40px 30px; text-align: center; background: rgba(10, 20, 15, 0.95); max-width: 550px; width: 95%; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); }
+        .warn-contact { margin: 20px 0; padding: 20px; background: rgba(212, 175, 55, 0.07); border-radius: 20px; font-size: 1.1rem; border: 1px dashed var(--gold); line-height: 2; }
+        .warn-contact b { color: var(--gold); font-size: 1.3rem; margin: 0 5px; }
+
+        header { padding: 15px; text-align: center; background: rgba(0,0,0,0.8); border-bottom: 1px solid var(--gold); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+        .logo { font-family: 'Amiri', serif; font-size: 1.8rem; color: var(--gold); text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+
+        .page { display: none; padding: 20px; max-width: 700px; margin: auto; padding-bottom: 140px; }
+        .page.active { display: block; animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--glass); border-radius: 20px; padding: 20px; margin-bottom: 15px; border-right: 4px solid var(--gold); transition: 0.3s; }
+        .card h3 { color: var(--gold); margin-bottom: 12px; font-family: 'Amiri'; font-size: 1.4rem; border-bottom: 1px solid rgba(212,175,55,0.1); padding-bottom: 5px; }
+        .card p { font-family: 'Amiri', serif; font-size: 1.3rem; line-height: 1.8; text-align: justify; color: #d0d0d0; }
+
+        .prayer-list { background: var(--glass); border-radius: 20px; overflow: hidden; }
+        .prayer-time-box { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid rgba(212,175,55,0.1); transition: 0.3s; }
+        .prayer-time-box:last-child { border: none; }
+        .prayer-time-box span:first-child { color: var(--gold); font-weight: bold; }
+
+        .subha-container { text-align: center; margin-top: 20px; }
+        .press-zone { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--gold); margin: 25px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%); cursor: pointer; transition: 0.2s; box-shadow: 0 0 30px rgba(212,175,55,0.1); position: relative; overflow: hidden; }
+        .press-zone:active { transform: scale(0.92); background: var(--active-bg); }
+        
+        .reset-btn { width: 100%; max-width: 300px; padding: 18px; border-radius: 15px; border: 1px solid #ff4444; background: rgba(255,68,68,0.05); color: #ff4444; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .reset-btn:active { background: #ff4444; color: white; }
+
+        nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; background: rgba(0, 12, 6, 0.95); border: 1px solid var(--gold); border-radius: 35px; display: flex; padding: 12px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-link { flex: 1; text-align: center; color: #666; cursor: pointer; transition: 0.3s; font-size: 0.85rem; }
+        .nav-link.active { color: var(--gold); transform: translateY(-3px); }
+        .nav-link i { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+
+        select { width: 100%; padding: 15px; background: #0a0a0a; color: var(--gold); border: 1px solid var(--gold); border-radius: 15px; font-family: 'Tajawal'; font-size: 1rem; outline: none; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="gate" class="overlay">
+    <div class="logo" style="font-size: 3rem; margin-bottom: 40px;">الثقلين</div>
+    <div class="choice-card" onclick="chooseMethod('shia')">
+        <h2 style="color: var(--gold);">المذهب الشيعي</h2>
+    </div>
+    <div class="choice-card" onclick="chooseMethod('sunni')">
+        <h2 style="color: var(--gold);">المذهب السني</h2>
+    </div>
+</div>
+
+<div id="warn" class="overlay" style="display:none;">
+    <div class="warn-box">
+        <h2 style="color:var(--gold); margin-bottom:20px; font-family:'Amiri'; font-size:2.5rem;">تنبيه هادئ</h2>
+        <p style="font-size: 1.2rem; line-height: 1.6;">يرجى تفعيل الموقع (GPS) لضبط أوقات الصلاة بدقة.</p>
+        
+        <div class="warn-contact">
+            <p style="color: #fff; margin-bottom: 10px;">عند ملاحظة أي خطأ في الآيات أو الأحاديث، نرجو منكم إبلاغنا فوراً لننال الأجر معاً:</p>
+            تيك توك: <b>irq498</b><br>
+            انستقرام: <b>irq_of</b>
+        </div>
+
+        <div id="timer" style="font-size:3rem; color:var(--gold); font-weight:900; margin: 15px 0; opacity: 0.8;">10</div>
+        <button id="entry-btn" class="choice-card" style="display:none; background:var(--gold); color:#000; width:100%; font-weight: 900; font-size: 1.3rem;" onclick="entry()">دخول للتطبيق</button>
+    </div>
+</div>
+
+<header><div class="logo">تطبيق الثقلين</div></header>
+
+<section id="p-t" class="page active">
+    <div class="card">
+        <h3><i class="fa-solid fa-clock"></i> أوقات الصلاة</h3>
+        <div id="times-container" class="prayer-list">جاري تحديد الموقع...</div>
+    </div>
+    
+    <div class="subha-container">
+        <div id="dhikr-label" style="font-size:1.8rem; color:var(--gold); font-family:'Amiri'; height: 40px;">استغفر الله</div>
+        <div id="counter-val" style="font-size:5.5rem; font-weight:900; color: #fff;">0</div>
+        <div class="press-zone" onclick="tapSubha()">
+            <span style="font-size: 1rem; opacity: 0.6;">إضغط هنا</span>
+            <i class="fa-solid fa-fingerprint" style="margin-top: 10px; font-size: 2rem; color: var(--gold);"></i>
+        </div>
+        <button class="reset-btn" onclick="resetSubha()">تصفير عداد التسبيح</button>
+    </div>
+</section>
+
+<section id="p-q" class="page">
+    <select id="surah-select" onchange="loadSurah(this.value)"></select>
+    <div class="card"><div id="quran-text">اختر سورة مباركة من القائمة...</div></div>
+</section>
+
+<section id="p-a" class="page">
+    <h2 class="section-title">الأذكار والتحصين</h2>
+    <div id="adhkar-list"></div>
+</section>
+
+<section id="p-h" class="page">
+    <h2 class="section-title">الأحاديث الأربعون</h2>
+    <div id="hadith-list"></div>
+</section>
+
+<nav>
+    <div class="nav-link active" onclick="navTo('t', this)"><i class="fa-solid fa-kaaba"></i><span>الرئيسية</span></div>
+    <div class="nav-link" onclick="navTo('q', this)"><i class="fa-solid fa-book-quran"></i><span>القرآن</span></div>
+    <div class="nav-link" onclick="navTo('a', this)"><i class="fa-solid fa-heart"></i><span>الأذكار</span></div>
+    <div class="nav-link" onclick="navTo('h', this)"><i class="fa-solid fa-scroll"></i><span>الأحاديث</span></div>
+</nav>
+
+<script>
+    let method = ''; 
+    let count = 0; 
+    let step = 0;
+    let prayerTimings = {};
+
+    function chooseMethod(m) {
+        method = m; 
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('warn').style.display = 'flex';
+        document.getElementById('dhikr-label').innerText = (method === 'shia') ? "الله أكبر" : "سبحان الله";
+        
+        let t = 10;
+        let c = setInterval(() => {
+            t--; document.getElementById('timer').innerText = t;
+            if(t <= 0) { 
+                clearInterval(c); 
+                document.getElementById('timer').style.display = 'none'; 
+                document.getElementById('entry-btn').style.display = 'block'; 
+            }
+        }, 1000);
+    }
+
+    function entry() { 
+        document.getElementById('warn').style.display = 'none'; 
+        initQuran(); loadAdhkar(); loadHadiths(); getPrayerTimes(); 
+        if("Notification" in window) Notification.requestPermission();
+        setInterval(checkAlarm, 60000);
+    }
+
+    function getPrayerTimes() {
+        navigator.geolocation.getCurrentPosition(async pos => {
+            const { latitude, longitude } = pos.coords;
+            const mParam = (method === 'shia') ? 0 : 2; 
+            const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=${mParam}`);
+            const d = await res.json();
+            prayerTimings = d.data.timings;
+            renderTimes();
+        }, () => {
+            document.getElementById('times-container').innerHTML = "<p style='padding:20px;'>يرجى تفعيل GPS لضبط الأوقات.</p>";
+        });
+    }
+
+    function renderTimes() {
+        const names = {Fajr:"الفجر", Sunrise:"الشروق", Dhuhr:"الظهر", Asr:"العصر", Maghrib:"المغرب", Isha:"العشاء"};
+        let html = '';
+        for(let key in names) {
+            html += `<div class="prayer-time-box"><span>${names[key]}</span><span>${prayerTimings[key]}</span></div>`;
+        }
+        document.getElementById('times-container').innerHTML = html;
+    }
+
+    function tapSubha() {
+        count++;
+        const lbl = document.getElementById('dhikr-label');
+        if (method === 'shia') {
+            if(step===0){ lbl.innerText="الله أكبر"; if(count>=34){count=0; step=1; lbl.innerText="الحمد لله"; vibrate(200);} }
+            else if(step===1){ lbl.innerText="الحمد لله"; if(count>=33){count=0; step=2; lbl.innerText="سبحان الله"; vibrate(200);} }
+            else if(step===2){ lbl.innerText="سبحان الله"; if(count>=33){count=0; step=0; lbl.innerText="تم التسبيح"; vibrate(500);} }
+        } else {
+            lbl.innerText = count <= 33 ? "سبحان الله" : count <= 66 ? "الحمد لله" : "الله أكبر";
+            if(count >= 99) { count = 0; vibrate(500); }
+            else if(count % 33 === 0) vibrate(200);
+        }
+        document.getElementById('counter-val').innerText = count; 
+        vibrate(40);
+    }
+
+    function resetSubha() { 
+        count=0; step=0; 
+        document.getElementById('counter-val').innerText=0; 
+        document.getElementById('dhikr-label').innerText = (method === 'shia') ? "الله أكبر" : "سبحان الله";
+        vibrate([50, 50, 50]);
+    }
+
+    async function initQuran() {
+        const res = await fetch('https://api.alquran.cloud/v1/surah');
+        const d = await res.json();
+        const sel = document.getElementById('surah-select');
+        sel.add(new Option("إختر سورة...", ""));
+        d.data.forEach(s => sel.add(new Option(s.number + ". " + s.name, s.number)));
+    }
+
+    async function loadSurah(n) {
+        if(!n) return;
+        const res = await fetch(`https://api.alquran.cloud/v1/surah/${n}`);
+        const d = await res.json();
+        document.getElementById('quran-text').innerHTML = d.data.ayahs.map(a => a.text + ` ﴿${a.numberInSurah}﴾`).join(' ');
+        window.scrollTo(0,0);
+    }
+
+    function loadAdhkar() {
+        const container = document.getElementById('adhkar-list');
+        const azkar = [
+            {t:"أذكار الصباح", c:"أصبحنا وأصبح الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له."},
+            {t:"أذكار المساء", c:"أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له."},
+            {t:"آية الكرسي", c:"اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ..."},
+            {t:"سيد الاستغفار", c:"اللهم أنت ربي لا إله إلا أنت، خلقتني وأنا عبدك وأنا على عهدك ووعدك ما استطعت."}
+        ];
+        if(method==='shia') azkar.push({t:"دعاء الفرج", c:"اللهم كن لوليك الحجة بن الحسن صلواتك عليه وعلى آبائه في هذه الساعة وفي كل ساعة..."});
+        container.innerHTML = azkar.map(a => `<div class="card"><h3>${a.t}</h3><p>${a.c}</p></div>`).join('');
+    }
+
+    function loadHadiths() {
+        const container = document.getElementById('hadith-list');
+        const h = [
+            {t:"النبي محمد (ص)", c:"إني تارك فيكم الثقلين: كتاب الله، وعترتي أهل بيتي."},
+            {t:"النبي محمد (ص)", c:"خيركم من تعلم القرآن وعلمه."},
+            {t:"الإمام علي (ع)", c:"الناس صنفان: إما أخ لك في الدين، أو نظير لك في الخلق."},
+            {t:"النبي محمد (ص)", c:"إنما بعثت لأتمم مكارم الأخلاق."},
+            {t:"الإمام الصادق (ع)", c:"صلاة الليل تبيض الوجه وتطيب الريح وتجلب الرزق."},
+            {t:"النبي محمد (ص)", c:"من سلك طريقاً يلتمس فيه علماً سهل الله له به طريقاً إلى الجنة."},
+            {t:"الإمام علي (ع)", c:"عجبت لمن يقنط ومعه الاستغفار."},
+            {t:"النبي محمد (ص)", c:"الدعاء مخ العبادة."},
+            {t:"الإمام الحسن (ع)", c:"تُجهل النعم ما أقامت، فإذا ولت عرفت."},
+            {t:"الإمام الحسين (ع)", c:"إن حوائج الناس إليكم من نعم الله عليكم، فلا تملوا النعم."},
+            {t:"النبي محمد (ص)", c:"تبسمك في وجه أخيك لك صدقة."},
+            {t:"الإمام الباقر (ع)", c:"عالم ينتفع بعلمه أفضل من ألف عابد."},
+            {t:"النبي محمد (ص)", c:"الطهور شطر الإيمان."},
+            {t:"الإمام الرضا (ع)", c:"التودد إلى الناس نصف العقل."},
+            {t:"النبي محمد (ص)", c:"المسلم من سلم المسلمون من لسانه ويده."},
+            {t:"الإمام الهادي (ع)", c:"الدنيا سوق ربح فيها قوم وخسر آخرون."},
+            {t:"النبي محمد (ص)", c:"لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه."},
+            {t:"الإمام علي (ع)", c:"البخل عار، والجبن منقصة."},
+            {t:"النبي محمد (ص)", c:"اتق الله حيثما كنت، وأتبع السيئة الحسنة تمحها."},
+            {t:"الإمام العسكري (ع)", c:"ليست العبادة كثرة الصيام والصلاة، وإنما العبادة كثرة التفكر في أمر الله."},
+            {t:"النبي محمد (ص)", c:"طلب العلم فريضة على كل مسلم ومسلمة."},
+            {t:"الإمام علي (ع)", c:"من نصب نفسه للناس إماماً فليبدأ بتعليم نفسه قبل تعليم غيره."},
+            {t:"النبي محمد (ص)", c:"من كان يؤمن بالله واليوم الآخر فليقل خيراً أو ليصمت."},
+            {t:"الإمام السجاد (ع)", c:"القول الحسن يثري المال، وينمي الرزق."},
+            {t:"النبي محمد (ص)", c:"أحب الأعمال إلى الله أدومها وإن قل."},
+            {t:"الإمام علي (ع)", c:"قيمة كل امرئ ما يحسنه."},
+            {t:"النبي محمد (ص)", c:"أكمل المؤمنين إيماناً أحسنهم خلقاً."},
+            {t:"الإمام الصادق (ع)", c:"إنما يداوم على صلاة الجماعة من يحب الله ورسوله."},
+            {t:"النبي محمد (ص)", c:"يسروا ولا تعسروا، وبشروا ولا تنفروا."},
+            {t:"الإمام علي (ع)", c:"الصدر آلة الرئاسة."},
+            {t:"النبي محمد (ص)", c:"كلمتان خفيفتان على اللسان، ثقيلتان في الميزان: سبحان الله وبحمده، سبحان الله العظيم."},
+            {t:"الإمام الحسين (ع)", c:"لا أرى الموت إلا سعادة، والحياة مع الظالمين إلا برماً."},
+            {t:"النبي محمد (ص)", c:"أنا وكافل اليتيم في الجنة كهاتين."},
+            {t:"الإمام علي (ع)", c:"أشد الذنوب ما استهان به صاحبه."},
+            {t:"النبي محمد (ص)", c:"كلكم راع وكلكم مسؤول عن رعيته."},
+            {t:"الإمام الصادق (ع)", c:"بروا آباءكم يبركم أبناؤكم."},
+            {t:"النبي محمد (ص)", c:"ما زال جبريل يوصيني بالجار حتى ظننت أنه سيورثه."},
+            {t:"الإمام علي (ع)", c:"نفسك إن لم تشغلها بالحق شغلتك بالباطل."},
+            {t:"النبي محمد (ص)", c:"الدين النصيحة."},
+            {t:"الإمام الكاظم (ع)", c:"ليس منا من لم يحاسب نفسه في كل يوم."}
+        ];
+        h.sort(() => Math.random() - 0.5);
+        container.innerHTML = h.map(item => `<div class="card"><h3><i class="fa-solid fa-quote-right" style="font-size:0.8rem; margin-left:10px;"></i>${item.t}</h3><p>${item.c}</p></div>`).join('');
+    }
+
+    function navTo(p, el) {
+        document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active'));
+        document.getElementById('p-'+p).classList.add('active'); el.classList.add('active');
+        vibrate(20);
+    }
+
+    function checkAlarm() {
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        for (let p in prayerTimings) {
+            if (prayerTimings[p] === timeStr) {
+                new Notification("حان وقت الصلاة", { body: `الآن موعد الأذان` });
+            }
+        }
+    }
+
+    function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
+</script>
+</body>
+</html>
